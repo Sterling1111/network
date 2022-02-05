@@ -27,17 +27,21 @@ class Network(object):
         for i, (weight, bias) in enumerate(zip(self.weights, self.biases)):
             net_inputs = np.dot(weight, activations) + bias
             activations = sigmoid(net_inputs)
-            self.activations[i+1] = activations
+            self.activations[i + 1] = activations
         return activations
 
     def backward_propagate(self, difference):
         for i in reversed(range(len(self.weight_derivatives))):
             a_i_plus_1 = self.activations[i + 1]
+            # this follows from theorem 1 and 2. In first pass difference is del_a C
+            # in subsequent passes difference is left part of hadamard from theorem 2
             delta = np.multiply(difference, sigmoid(a_i_plus_1, True))
             a_i = self.activations[i]
-            # why I got to do this???
+            # this follows from theorem 4.
             self.weight_derivatives[i] = np.dot(delta, a_i.T)
+            # this follows from theorem 3.
             self.bias_derivatives[i] = delta
+            # this follows from theorem 2 we are building left-hand side of hadamard product
             difference = np.dot(self.weights[i].T, delta)
 
     def gradient_descent(self, learning_rate=1.0):
@@ -63,3 +67,31 @@ class Network(object):
                 weight_derivative /= len(weight_derivatives)
                 bias_derivative /= len(bias_derivatives)
             self.gradient_descent(learning_rate)
+
+
+def forward_propagate():
+    print(net.forward_propagate(np.array([0, 0])))
+    print(net.forward_propagate(np.array([0, 1])))
+    print(net.forward_propagate(np.array([1, 0])))
+    print(net.forward_propagate(np.array([1, 1])))
+
+
+if __name__ == '__main__':
+    # Its easy to create an arbitrary neural net. Simply pass to the constructor a list which contains the number
+    # of neurons in each layer. In out example we will have a net of 2 input, 2 hidden, and 1 output neuron.
+    net = Network([2, 2, 1])
+    print('Before training')
+    forward_propagate()
+    # Once created call the learn function. It takes a np 2d array where the rows are input elements
+    # in a single training set. It then takes a np 2d array where the rows are the target output of
+    # the net. Next it takes an epoch which is the number of times it will run the entire training set
+    # and backpropagate. Finally it takes a learning rate which is multiplied by the gradient vector
+    # when doing gradient descent. The larger it is the faster it learns**. There is no error checking
+    # of any kind so make sure that the dimensions match. It is configured now for xor so you can simply
+    # run it and see the results. Forward propagate returns the result vector. I configure the net then
+    # before it is trained I forward prop on the inputs. The results are bad. Then I train then forward
+    # propagate and the results are good.
+    net.learn(np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([[0], [1], [1], [0]]), 1000, 10)
+    print()
+    print('After training')
+    forward_propagate()
