@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 
@@ -48,9 +49,15 @@ class Network(object):
             self.weights[i] -= self.weight_derivatives[i] * learning_rate
             self.biases[i] -= self.bias_derivatives[i] * learning_rate
 
-    def learn(self, inputs, targets, epochs, learning_rate=1.0, epsilon=.01):
+    def learn(self, inputs, targets, epochs, seconds, learning_rate=1.0, epsilon=.01):
         epsilon *= 2
+        start_time = time.time()
         for i in range(epochs):
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+            if elapsed_time > seconds:
+                print('maximum training time achieved')
+                return
             error = 0
             weight_derivatives = [np.zeros((y, x))
                                   for x, y in zip(self.network_layer_sizes[:-1], self.network_layer_sizes[1:])]
@@ -83,16 +90,9 @@ if __name__ == '__main__':
     net = Network([2, 2, 1])
     print('Before training')
     forward_propagate(net)
-    # Once created call the learn function. It takes a np 2d array where the rows are input elements
-    # in a single training set. It then takes a np 2d array where the rows are the target output of
-    # the net. Next it takes an epoch which is the number of times it will run the entire training set
-    # and backpropagate. Finally it takes a learning rate which is multiplied by the gradient vector
-    # when doing gradient descent. The larger it is the faster it learns**. There is no error checking
-    # of any kind so make sure that the dimensions match. It is configured now for xor so you can simply
-    # run it and see the results. Forward propagate returns the result vector. I configure the net then
-    # before it is trained I forward prop on the inputs. The results are bad. Then I train then forward
-    # propagate and the results are good.
+    # pass the training inputs, expected outputs, epochs, max time in seconds, learning rate, and min error
     net.learn(np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-              np.array([[0], [1], [1], [0]]), 10000000, 10, 0.000001)
+              np.array([[0], [1], [1], [0]]), 10000000000, (10*60), 15, 0.0000001)
     print()
+    print('after training')
     forward_propagate(net)
