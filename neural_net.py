@@ -1,3 +1,4 @@
+import math
 import time
 import numpy as np
 
@@ -49,10 +50,13 @@ class Network(object):
             self.weights[i] -= self.weight_derivatives[i] * learning_rate
             self.biases[i] -= self.bias_derivatives[i] * learning_rate
 
-    def learn(self, inputs, targets, epochs, seconds, learning_rate=1.0, epsilon=.01):
+    def learn(self, inputs, targets, learning_rate=1.0, epsilon=.001, epochs=math.inf, seconds=math.inf):
         epsilon *= 2
         start_time = time.time()
-        for i in range(epochs):
+        while True:
+            if epochs < 1:
+                print('maximum epochs cycled')
+                return
             current_time = time.time()
             elapsed_time = current_time - start_time
             if elapsed_time > seconds:
@@ -71,6 +75,7 @@ class Network(object):
                 bias_derivatives = [np.add(x, y) for x, y in zip(bias_derivatives, self.bias_derivatives)]
             self.weight_derivatives = [np.divide(x, len(weight_derivatives)) for x in weight_derivatives]
             self.bias_derivatives = [np.divide(x, len(bias_derivatives)) for x in bias_derivatives]
+            epochs -= 1
             if error < epsilon:
                 print('minimum error achieved')
                 return
@@ -90,9 +95,9 @@ if __name__ == '__main__':
     net = Network([2, 2, 1])
     print('Before training')
     forward_propagate(net)
-    # pass the training inputs, expected outputs, epochs, max time in seconds, learning rate, and min error
+    # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
     net.learn(np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-              np.array([[0], [1], [1], [0]]), 10000000000, (10*60), 15, 0.0000001)
+              np.array([[0], [1], [1], [0]]), seconds=(5*60), epsilon=.00001, learning_rate=10)
     print()
     print('after training')
     forward_propagate(net)
