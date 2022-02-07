@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 
 
@@ -15,10 +14,10 @@ class Network(object):
         self.network_layer_sizes = network_layer_sizes
         self.biases = [2 * np.random.random((x, 1)) - 1 for x in network_layer_sizes[1:]]
         self.weights = [2 * np.random.random((y, x)) - 1
-                        for x, y in zip(self.network_layer_sizes[:-1], self.network_layer_sizes[1:])]
+                        for x, y in zip(network_layer_sizes[:-1], network_layer_sizes[1:])]
         self.activations = [np.zeros((x, 1)) for x in network_layer_sizes[:]]
         self.weight_derivatives = [np.zeros((y, x))
-                                   for x, y in zip(self.network_layer_sizes[:-1], self.network_layer_sizes[1:])]
+                                   for x, y in zip(network_layer_sizes[:-1], network_layer_sizes[1:])]
         self.bias_derivatives = [np.zeros((x, 1)) for x in network_layer_sizes[1:]]
 
     def forward_propagate(self, inputs):
@@ -51,29 +50,25 @@ class Network(object):
 
     def learn(self, inputs, targets, epochs, learning_rate=1.0):
         for i in range(epochs):
-            weight_derivatives = []
-            bias_derivatives = []
+            weight_derivatives = [np.zeros((y, x))
+                                  for x, y in zip(self.network_layer_sizes[:-1], self.network_layer_sizes[1:])]
+            bias_derivatives = [np.zeros((x, 1)) for x in self.network_layer_sizes[1:]]
             for input, target in zip(inputs, targets):
                 output = self.forward_propagate(input)
                 difference = output - target
                 self.backward_propagate(difference)
-                weight_derivatives.append(copy.deepcopy(self.weight_derivatives))
-                bias_derivatives.append(copy.deepcopy(self.bias_derivatives))
-            for (weight_der_list, bias_der_list) in zip(weight_derivatives[:-1], bias_derivatives[:-1]):
-                for j, (weight_derivative, bias_derivative) in enumerate(zip(weight_der_list, bias_der_list)):
-                    self.weight_derivatives[j] += weight_derivative
-                    self.bias_derivatives[j] += bias_derivative
-            for (weight_derivative, bias_derivative) in zip(self.weight_derivatives, self.bias_derivatives):
-                weight_derivative /= len(weight_derivatives)
-                bias_derivative /= len(bias_derivatives)
+                weight_derivatives = [np.add(x, y) for x, y in zip(weight_derivatives, self.weight_derivatives)]
+                bias_derivatives = [np.add(x, y) for x, y in zip(bias_derivatives, self.bias_derivatives)]
+            self.weight_derivatives = [np.divide(x, len(weight_derivatives)) for x in weight_derivatives]
+            self.bias_derivatives = [np.divide(x, len(bias_derivatives)) for x in bias_derivatives]
             self.gradient_descent(learning_rate)
 
 
-def forward_propagate():
-    print(net.forward_propagate(np.array([0, 0])))
-    print(net.forward_propagate(np.array([0, 1])))
-    print(net.forward_propagate(np.array([1, 0])))
-    print(net.forward_propagate(np.array([1, 1])))
+def forward_propagate(network):
+    print(network.forward_propagate(np.array([0, 0])))
+    print(network.forward_propagate(np.array([0, 1])))
+    print(network.forward_propagate(np.array([1, 0])))
+    print(network.forward_propagate(np.array([1, 1])))
 
 
 if __name__ == '__main__':
@@ -81,7 +76,7 @@ if __name__ == '__main__':
     # of neurons in each layer. In out example we will have a net of 2 input, 2 hidden, and 1 output neuron.
     net = Network([2, 2, 1])
     print('Before training')
-    forward_propagate()
+    forward_propagate(net)
     # Once created call the learn function. It takes a np 2d array where the rows are input elements
     # in a single training set. It then takes a np 2d array where the rows are the target output of
     # the net. Next it takes an epoch which is the number of times it will run the entire training set
@@ -91,7 +86,8 @@ if __name__ == '__main__':
     # run it and see the results. Forward propagate returns the result vector. I configure the net then
     # before it is trained I forward prop on the inputs. The results are bad. Then I train then forward
     # propagate and the results are good.
-    net.learn(np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([[0], [1], [1], [0]]), 1000, 10)
+    net.learn(np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+              np.array([[0], [1], [1], [0]]), 1000, 10)
     print()
     print('After training')
-    forward_propagate()
+    forward_propagate(net)
