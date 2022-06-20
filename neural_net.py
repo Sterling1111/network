@@ -2,6 +2,7 @@ import math
 import time
 import numpy as np
 from sklearn.datasets import load_digits
+import matplotlib.pyplot as plt
 
 
 def sigmoid(x, derivative=False):
@@ -69,8 +70,7 @@ class Network(object):
             bias_derivatives = [np.zeros((x, 1)) for x in self.network_layer_sizes[1:]]
             for input, target in zip(inputs, targets):
                 output = self.forward_propagate(input)
-                difference = output.T - target
-                difference = difference.T
+                difference = (output.T - target).T
                 error += np.square(difference)
                 self.backward_propagate(difference)
                 weight_derivatives = [np.add(x, y) for x, y in zip(weight_derivatives, self.weight_derivatives)]
@@ -97,16 +97,19 @@ if __name__ == '__main__':
     net2 = Network([2, 2, 1])
     net2.learn(np.array([[0, 0], [1, 1]]), np.array([[0], [1]]))
     forward_propagate(net2)
-    targets = np.empty((5, 10))
-    for i, elem in enumerate(digits.target[0:5]):
+    targets = np.empty((200, 10))
+    for i, elem in enumerate(digits.target[0:200]):
         targets[i] = np.zeros(10)
         targets[i][elem] = 1
-    inputs = digits.data[0:5]
+    inputs = digits.data[0:200]
     for i, elem in enumerate(inputs):
         inputs[i] = inputs[i] / 16
 
     # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
-    net.learn(inputs, targets, epsilon=.001, learning_rate=15, seconds=30)
+    net.learn(inputs, targets, epsilon=.005, learning_rate=.03, seconds=200)
     np.set_printoptions(suppress=True)
-    print(net.forward_propagate(inputs[3]))
-    print(digits.target[0])
+    print(net.forward_propagate(digits.data[177]))
+    print(digits.target[177])
+    plt.gray()
+    plt.matshow(digits.images[177])
+    plt.show()
