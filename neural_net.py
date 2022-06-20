@@ -97,13 +97,16 @@ if __name__ == '__main__':
     net2 = Network([2, 2, 1])
     net2.learn(np.array([[0, 0], [1, 1]]), np.array([[0], [1]]))
     forward_propagate(net2)
-    targets = np.empty((digits.data.shape[0], 10))
-    for i, elem in enumerate(digits.target[0:10]):
+    targets = np.empty((5, 10))
+    for i, elem in enumerate(digits.target[0:5]):
         targets[i] = np.zeros(10)
         targets[i][elem] = 1
-    inputs = digits.data
+    inputs = digits.data[0:5]
     for i, elem in enumerate(inputs):
         inputs[i] = inputs[i] / 16
 
     # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
-    net.learn(inputs, targets, epsilon=.1, learning_rate=10)
+    net.learn(inputs, targets, epsilon=.001, learning_rate=15, seconds=30)
+    np.set_printoptions(suppress=True)
+    print(net.forward_propagate(inputs[3]))
+    print(digits.target[0])
