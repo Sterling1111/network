@@ -1,6 +1,8 @@
 import math
 import time
 import numpy as np
+from sklearn.datasets import load_digits
+import matplotlib.pyplot as plt
 
 
 def sigmoid(x, derivative=False):
@@ -76,28 +78,37 @@ class Network(object):
             self.weight_derivatives = [np.divide(x, len(weight_derivatives)) for x in weight_derivatives]
             self.bias_derivatives = [np.divide(x, len(bias_derivatives)) for x in bias_derivatives]
             epochs -= 1
-            if error < epsilon:
+            if np.sum(error) < epsilon:
                 print('minimum error achieved')
                 return
             self.gradient_descent(learning_rate)
 
 
 def forward_propagate(network):
-    print(network.forward_propagate(np.array([0, 0])))
-    print(network.forward_propagate(np.array([0, 1])))
-    print(network.forward_propagate(np.array([1, 0])))
-    print(network.forward_propagate(np.array([1, 1])))
+    print(network.forward_propagate(np.array([1, 1, 1])))
+    print(network.forward_propagate(np.array([2, 2, 2])))
 
 
 if __name__ == '__main__':
+    digits = load_digits()
+    x = digits.data
+    print(digits.data.shape)
+    print(x.shape[0])
+    # print(digits.images[0])
+    # print(digits.images[0].ravel())
+    # print(digits.target[0])
+    # print(type(digits.images))
+
     # Its easy to create an arbitrary neural net. Simply pass to the constructor a list which contains the number
     # of neurons in each layer. In out example we will have a net of 2 input, 2 hidden, and 1 output neuron.
-    net = Network([2, 2, 1])
-    print('Before training')
-    forward_propagate(net)
+    net = Network([64, 16, 16, 10])
+    targets = np.empty((digits.data.shape[0], 10))
+    for i, elem in enumerate(digits.target):
+        targets[i] = np.zeros(10)
+        targets[i][elem] = 1
+    inputs = digits.data
+    for i, elem in enumerate(inputs):
+        inputs[i] = inputs[i] / 16
+
     # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
-    net.learn(np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-              np.array([[0], [1], [1], [0]]), seconds=(5*60), epsilon=.00001, learning_rate=10)
-    print()
-    print('after training')
-    forward_propagate(net)
+    net.learn(inputs, targets, seconds=150, epsilon=.001, learning_rate=10)
