@@ -2,7 +2,6 @@ import math
 import time
 import numpy as np
 from sklearn.datasets import load_digits
-import matplotlib.pyplot as plt
 
 
 def sigmoid(x, derivative=False):
@@ -70,7 +69,8 @@ class Network(object):
             bias_derivatives = [np.zeros((x, 1)) for x in self.network_layer_sizes[1:]]
             for input, target in zip(inputs, targets):
                 output = self.forward_propagate(input)
-                difference = output - target
+                difference = output.T - target
+                difference = difference.T
                 error += np.square(difference)
                 self.backward_propagate(difference)
                 weight_derivatives = [np.add(x, y) for x, y in zip(weight_derivatives, self.weight_derivatives)]
@@ -85,25 +85,20 @@ class Network(object):
 
 
 def forward_propagate(network):
-    print(network.forward_propagate(np.array([1, 1, 1])))
-    print(network.forward_propagate(np.array([2, 2, 2])))
+    print(network.forward_propagate(np.array([1, 1])))
+    print(network.forward_propagate(np.array([0, 0])))
 
 
 if __name__ == '__main__':
     digits = load_digits()
-    x = digits.data
-    print(digits.data.shape)
-    print(x.shape[0])
-    # print(digits.images[0])
-    # print(digits.images[0].ravel())
-    # print(digits.target[0])
-    # print(type(digits.images))
-
     # Its easy to create an arbitrary neural net. Simply pass to the constructor a list which contains the number
     # of neurons in each layer. In out example we will have a net of 2 input, 2 hidden, and 1 output neuron.
     net = Network([64, 16, 16, 10])
+    net2 = Network([2, 2, 1])
+    net2.learn(np.array([[0, 0], [1, 1]]), np.array([[0], [1]]))
+    forward_propagate(net2)
     targets = np.empty((digits.data.shape[0], 10))
-    for i, elem in enumerate(digits.target):
+    for i, elem in enumerate(digits.target[0:10]):
         targets[i] = np.zeros(10)
         targets[i][elem] = 1
     inputs = digits.data
@@ -111,4 +106,4 @@ if __name__ == '__main__':
         inputs[i] = inputs[i] / 16
 
     # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
-    net.learn(inputs, targets, seconds=150, epsilon=.001, learning_rate=10)
+    net.learn(inputs, targets, epsilon=.1, learning_rate=10)
