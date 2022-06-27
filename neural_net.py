@@ -94,22 +94,41 @@ if __name__ == '__main__':
     # Its easy to create an arbitrary neural net. Simply pass to the constructor a list which contains the number
     # of neurons in each layer. In out example we will have a net of 2 input, 2 hidden, and 1 output neuron.
     net = Network([64, 16, 16, 10])
-    net2 = Network([2, 2, 1])
-    net2.learn(np.array([[0, 0], [1, 1]]), np.array([[0], [1]]))
-    forward_propagate(net2)
-    targets = np.empty((200, 10))
-    for i, elem in enumerate(digits.target[0:200]):
+    num_to_train = 1790
+    targets = np.empty((num_to_train, 10))
+    for i, elem in enumerate(digits.target[0:num_to_train]):
         targets[i] = np.zeros(10)
         targets[i][elem] = 1
-    inputs = digits.data[0:200]
+    inputs = digits.data[0:num_to_train]
     for i, elem in enumerate(inputs):
         inputs[i] = inputs[i] / 16
 
     # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
-    net.learn(inputs, targets, epsilon=.005, learning_rate=.03, seconds=200)
+    net.learn(inputs, targets, learning_rate=.008, seconds=100)
     np.set_printoptions(suppress=True)
-    print(net.forward_propagate(digits.data[177]))
-    print(digits.target[177])
-    plt.gray()
-    plt.matshow(digits.images[177])
-    plt.show()
+    num_wrong = 0
+    for i, target in enumerate(digits.target):
+        result = net.forward_propagate(digits.data[i])
+        if target != np.argmax(result):
+            num_wrong = num_wrong + 1
+            print(i, np.argmax(result), target)
+            # print(result)
+            # plt.gray()
+            # plt.matshow(digits.images[i])
+            # plt.show()
+    print(str(round(100 * ((len(digits.target) - num_wrong) / len(digits.target)), 0)) + '% accuracy')
+
+    while True:
+        num = int(input("Enter some inputs: "))
+        if num == -1:
+            break
+        else:
+            result = net.forward_propagate(digits.data[num])
+            target = digits.target[num]
+            print(result)
+            print('target: ', target)
+            print("Result: ", np.argmax(result))
+            plt.gray()
+            plt.matshow(digits.images[num])
+            plt.show()
+
