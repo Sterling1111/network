@@ -1,6 +1,7 @@
 import math
 import time
 import numpy as np
+import pygame
 from sklearn.datasets import load_digits
 import matplotlib.pyplot as plt
 
@@ -84,17 +85,60 @@ class Network(object):
             self.gradient_descent(learning_rate)
 
 
-def forward_propagate(network):
-    print(network.forward_propagate(np.array([1, 1])))
-    print(network.forward_propagate(np.array([0, 0])))
+def compress_canvas(screen):
+    small_canvas = pygame.surfarray.array3d(screen)
+    small_canvas = np.mean(small_canvas, axis=2) / 255.0
+    compressed_canvas = np.zeros((8, 8))
+    for i in range(8):
+        for j in range(8):
+            block = small_canvas[i*50:(i+1)*50, j*50:(j+1)*50]
+            compressed_canvas[i, j] = np.mean(block)
+    compressed_canvas = np.rot90(compressed_canvas, k=-1)
+    compressed_canvas = np.flip(compressed_canvas, axis=1)
+    return 1 - compressed_canvas  # Return 8x8 image
+
+
+def pygame_canvas():
+    pygame.init()
+    screen = pygame.display.set_mode([400, 400])
+    pygame.display.set_caption("Draw a Digit")
+    screen.fill((255, 255, 255))
+
+    running = True
+    drawing = False
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                drawing = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                drawing = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                compressed_digit = compress_canvas(screen)
+                pygame.quit()  # Quit Pygame after pressing Enter
+                return compressed_digit
+
+        if drawing:
+            mouse_pos = pygame.mouse.get_pos()
+            pygame.draw.circle(screen, (0, 0, 0), mouse_pos, 20)
+        pygame.display.flip()
+
+    pygame.quit()
+
+
+def show_compressed_image(compressed_image):
+    """Function to show the compressed image using plt, similar to how training data is shown."""
+    plt.gray()
+    plt.matshow(compressed_image)
+    plt.show()
 
 
 if __name__ == '__main__':
     digits = load_digits()
-    # Its easy to create an arbitrary neural net. Simply pass to the constructor a list which contains the number
-    # of neurons in each layer. In out example we will have a net of 2 input, 2 hidden, and 1 output neuron.
     net = Network([64, 16, 16, 10])
-    num_to_train = 1790
+    num_to_train = 777
     targets = np.empty((num_to_train, 10))
     for i, elem in enumerate(digits.target[0:num_to_train]):
         targets[i] = np.zeros(10)
@@ -103,15 +147,14 @@ if __name__ == '__main__':
     for i, elem in enumerate(inputs):
         inputs[i] = inputs[i] / 16
 
-    # pass the training inputs, expected outputs, learning rate, min error, epochs, and max time in seconds.
-    net.learn(inputs, targets, learning_rate=.008, seconds=100)
+    net.learn(inputs, targets, learning_rate=.00213, seconds=1000)
     np.set_printoptions(suppress=True)
     num_wrong = 0
     for i, target in enumerate(digits.target):
         result = net.forward_propagate(digits.data[i])
         if target != np.argmax(result):
             num_wrong = num_wrong + 1
-            print(i, np.argmax(result), target)
+            # print(i, np.argmax(result), target)
             # print(result)
             # plt.gray()
             # plt.matshow(digits.images[i])
@@ -119,16 +162,29 @@ if __name__ == '__main__':
     print(str(round(100 * ((len(digits.target) - num_wrong) / len(digits.target)), 0)) + '% accuracy')
 
     while True:
-        num = int(input("Enter some inputs: "))
-        if num == -1:
-            break
-        else:
-            result = net.forward_propagate(digits.data[num])
-            target = digits.target[num]
-            print(result)
-            print('target: ', target)
-            print("Result: ", np.argmax(result))
-            plt.gray()
-            plt.matshow(digits.images[num])
-            plt.show()
+        choice = input("Enter '1' to input a number or '2' to draw a digit (or 'q' to quit): ").strip()
+        if choice == '1':
+            num = int(input("Enter a number: "))
+            if num == -1:
+                break
+            else:
+                result = net.forward_propagate(digits.data[num] / 16)
+                target = digits.target[num]
+                print('Predicted:', np.argmax(result), 'Actual:', target)
+                print('Output Layer Activations:')
+                print(result)
+                plt.gray()
+                plt.matshow(digits.images[num])
+                plt.show()
 
+        elif choice == '2':
+            compressed_digit = pygame_canvas()
+            show_compressed_image(compressed_digit)  # Display the compressed image using plt
+            compressed_digit_flattened = compressed_digit.reshape(64)  # Flatten for input into the network
+            result = net.forward_propagate(compressed_digit_flattened)
+            print("Neural Network Prediction:", np.argmax(result))
+            print("Output Layer Activations:")
+            print(result)
+
+        elif choice.lower() == 'q':
+            break
